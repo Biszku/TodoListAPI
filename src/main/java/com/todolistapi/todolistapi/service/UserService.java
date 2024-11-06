@@ -34,8 +34,4 @@ public class UserService {
 
         return response;
     }
-
-    public boolean login(String rawPassword, String storedHashedPassword) {
-        return true;
-    }
 }
