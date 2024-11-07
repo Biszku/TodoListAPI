@@ -17,14 +17,20 @@ public class Account {
     private String name;
     @Column(name = "password")
     private String password;
+    @Column(name = "salt")
+    private String salt = BCrypt.gensalt();
 
     public Account() {
     }
 
-    public Account(String email, String name, String password) {
+    public Account(String email, String password) {
+        this(email, null, password);
+    }
+
+    public Account(String email, String password, String name) {
         this.email = email;
         this.name = name;
-        this.password = BCrypt.hashpw(password, BCrypt.gensalt());;
+        this.password = password;
     }
 
     public String getEmail() {
@@ -48,6 +54,18 @@ public class Account {
     }
 
     public void setPassword(String password) {
-        this.password = BCrypt.hashpw(password, BCrypt.gensalt());
+        this.password = password;
+    }
+
+    public String getSalt() {
+        return this.salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
+    }
+
+    public void hashPassword() {
+        this.password = BCrypt.hashpw(this.password, this.salt);
     }
 }
