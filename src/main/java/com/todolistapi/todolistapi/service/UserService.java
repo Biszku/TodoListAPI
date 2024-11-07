@@ -1,37 +1,43 @@
 package com.todolistapi.todolistapi.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.todolistapi.todolistapi.entity.Account;
 import com.todolistapi.todolistapi.repo.AccountRepo;
+import com.todolistapi.todolistapi.util.JWTManager;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
 
-    AccountRepo accountRepo;
-    ObjectMapper objectMapper;
+    private final AccountRepo accountRepo;
 
     public UserService(AccountRepo accountRepo) {
         this.accountRepo = accountRepo;
-        this.objectMapper = new ObjectMapper();
     }
 
-    public String register(Account rawPassword) {
+    public Object register(Account registerData) {
 
-        if (accountRepo.findByEmail(rawPassword.getEmail()).isPresent()) {
+        if (accountRepo.findByEmail(registerData.getEmail()).isPresent()) {
             return "User with this email already exists";
         }
+        registerData.hashPassword();
 
-        Account savedAccount = accountRepo.save(rawPassword);
-        String response = null;
+        Account savedAccount = accountRepo.save(registerData);
+        return JWTManager.generateJWT(savedAccount.getEmail());
+    }
 
-        try {
-            response = objectMapper.writeValueAsString(savedAccount);
-        } catch (JsonProcessingException e) {
-            return "Something went wrong with saving the account";
+    public Object login(Account loginData) {
+        var account = accountRepo.findByEmail(loginData.getEmail());
+
+        if(account.isPresent()) {
+            String accountSalt = account.get().getSalt();
+            loginData.setSalt(accountSalt);
+            loginData.hashPassword();
+            if(account.get().getPassword().equals(loginData.getPassword())) {
+                return JWTManager.generateJWT(account.get().getEmail());
+            } else {
+                return "Invalid password";
+            }
         }
-
-        return response;
+        return "User not found";
     }
 }
