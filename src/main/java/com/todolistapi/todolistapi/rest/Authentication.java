@@ -2,9 +2,7 @@ package com.todolistapi.todolistapi.rest;
 
 import com.todolistapi.todolistapi.entity.Account;
 import com.todolistapi.todolistapi.service.UserService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class Authentication {
@@ -15,12 +13,12 @@ public class Authentication {
     }
 
     @PostMapping("/register")
-    public String register(@RequestBody Account rawPassword) {
-        return userService.register(rawPassword);
+    public Object register(@RequestBody Account registerData) {
+        return userService.register(registerData);
     };
 
-//    @GetMapping("/login")
-//    public boolean login(String rawPassword, String storedHashedPassword) {
-//        return userService.login(rawPassword, storedHashedPassword);
-//    }
+    @PostMapping("/login")
+    public Object login(@RequestBody Account loginData) {
+        return userService.login(loginData);
+    }
 }
