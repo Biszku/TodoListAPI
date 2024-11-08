@@ -1,8 +1,12 @@
 package com.todolistapi.todolistapi.service;
 
 import com.todolistapi.todolistapi.entity.Account;
+import com.todolistapi.todolistapi.entity.AuthToken;
+import com.todolistapi.todolistapi.entity.Message;
 import com.todolistapi.todolistapi.repo.AccountRepo;
 import com.todolistapi.todolistapi.util.JWTManager;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,30 +18,35 @@ public class UserService {
         this.accountRepo = accountRepo;
     }
 
-    public Object register(Account registerData) {
+    public ResponseEntity<Object> register(Account registerData) {
 
         if (accountRepo.findByEmail(registerData.getEmail()).isPresent()) {
-            return "User with this email already exists";
+            return new ResponseEntity<>(new Message("User with this email already exists"), HttpStatus.CONFLICT);
         }
-        registerData.hashPassword();
 
+        registerData.hashPassword();
         Account savedAccount = accountRepo.save(registerData);
-        return JWTManager.generateJWT(savedAccount.getEmail());
+        AuthToken authToken = JWTManager.generateJWT(savedAccount.getEmail());
+
+        return ResponseEntity.ok(authToken);
     }
 
-    public Object login(Account loginData) {
+    public ResponseEntity<Object> login(Account loginData) {
         var account = accountRepo.findByEmail(loginData.getEmail());
 
         if(account.isPresent()) {
             String accountSalt = account.get().getSalt();
             loginData.setSalt(accountSalt);
             loginData.hashPassword();
+
             if(account.get().getPassword().equals(loginData.getPassword())) {
-                return JWTManager.generateJWT(account.get().getEmail());
+                AuthToken authToken = JWTManager.generateJWT(account.get().getEmail());
+                return ResponseEntity.ok(authToken);
             } else {
-                return "Invalid password";
+                return new ResponseEntity<>(new Message("Invalid password"), HttpStatus.UNAUTHORIZED);
             }
         }
-        return "User not found";
+
+        return new ResponseEntity<>(new Message("User not found"), HttpStatus.NOT_FOUND);
     }
 }
