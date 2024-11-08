@@ -2,23 +2,24 @@ package com.todolistapi.todolistapi.rest;
 
 import com.todolistapi.todolistapi.entity.Account;
 import com.todolistapi.todolistapi.service.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-public class Authentication {
+public class AuthenticationController {
     UserService userService;
 
-    public Authentication(UserService userService) {
+    public AuthenticationController(UserService userService) {
         this.userService = userService;
     }
 
     @PostMapping("/register")
-    public Object register(@RequestBody Account registerData) {
+    public ResponseEntity<Object> register(@RequestBody Account registerData) {
         return userService.register(registerData);
     };
 
     @PostMapping("/login")
-    public Object login(@RequestBody Account loginData) {
+    public ResponseEntity<Object> login(@RequestBody Account loginData) {
         return userService.login(loginData);
     }
 }
