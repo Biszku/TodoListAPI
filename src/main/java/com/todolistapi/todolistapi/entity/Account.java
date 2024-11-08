@@ -1,15 +1,14 @@
 package com.todolistapi.todolistapi.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import org.mindrot.jbcrypt.BCrypt;
+
+import java.util.List;
 
 @Entity
 @Table(name = "account")
 public class Account {
-
     @Id
     @Column(name = "email")
     private String email;
@@ -19,6 +18,9 @@ public class Account {
     private String password;
     @Column(name = "salt")
     private String salt = BCrypt.gensalt();
+    @OneToMany(mappedBy = "account")
+    @JsonIgnore
+    private List<Todo> posts;
 
     public Account() {
     }
@@ -58,14 +60,37 @@ public class Account {
     }
 
     public String getSalt() {
-        return this.salt;
+        return salt;
     }
 
     public void setSalt(String salt) {
         this.salt = salt;
     }
 
+    public List<Todo> getPosts() {
+        return posts;
+    }
+
+    public void setPosts(List<Todo> posts) {
+        this.posts = posts;
+    }
+
+    public void addPost(Todo post) {
+        this.posts.add(post);
+        post.setAccount(this);
+    }
+
     public void hashPassword() {
         this.password = BCrypt.hashpw(this.password, this.salt);
+    }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "email='" + email + '\'' +
+                ", name='" + name + '\'' +
+                ", password='" + password + '\'' +
+                ", salt='" + salt + '\'' +
+                '}';
     }
 }
