@@ -24,8 +24,7 @@ public class TodoService {
     }
 
     public ResponseEntity<Object> addPost(String authorization, Todo todo) {
-        String AccountMail = getEncodedAuthTokenSub(authorization);
-        Account account = accountRepo.findByEmail(AccountMail).orElse(null);
+        Account account = accountRepo.findByEmail(getEncodedEmail(authorization)).orElse(null);
 
         if (account == null) {
             return new ResponseEntity<>(new Message("Unauthorized"), HttpStatus.UNAUTHORIZED);
@@ -36,11 +35,10 @@ public class TodoService {
     }
 
     public ResponseEntity<Object> updatePost(Long id, String authorization, Todo post) {
-        String accountMail = getEncodedAuthTokenSub(authorization);
         Todo postInTodo;
 
         try {
-            postInTodo = getPostByMail(id, accountMail);
+            postInTodo = getPostByMail(id, getEncodedEmail(authorization));
         } catch (IndexOutOfBoundsException notFound) {
             return new ResponseEntity<>(new Message(notFound.getMessage()), HttpStatus.NOT_FOUND);
         } catch (SecurityException forbidden) {
@@ -49,16 +47,14 @@ public class TodoService {
 
         postInTodo.setTitle(post.getTitle());
         postInTodo.setDescription(post.getDescription());
-
         return ResponseEntity.ok(todoRepo.save(postInTodo));
     }
 
     public ResponseEntity<Object> deletePost(Long id, String authorization) {
-        String accountMail = getEncodedAuthTokenSub(authorization);
         Todo postInTodo;
 
         try {
-            postInTodo = getPostByMail(id, accountMail);
+            postInTodo = getPostByMail(id, getEncodedEmail(authorization));
         } catch (IndexOutOfBoundsException notFound) {
             return new ResponseEntity<>(new Message(notFound.getMessage()), HttpStatus.NOT_FOUND);
         } catch (SecurityException forbidden) {
@@ -70,24 +66,27 @@ public class TodoService {
     }
 
     public ResponseEntity<Object> listPosts(String authorization, int page, int limit) {
-        String accountMail = getEncodedAuthTokenSub(authorization);
-        Account account = accountRepo.findByEmail(accountMail).orElse(null);
+        Account account = accountRepo.findByEmail(getEncodedEmail(authorization)).orElse(null);
 
         if (account == null) {
             return new ResponseEntity<>(new Message("Unauthorized"), HttpStatus.UNAUTHORIZED);
         }
 
         List<Todo> posts = new ArrayList<>(limit);
-        for (int i = 0; i < limit && (page - 1) * limit + i < account.getPosts().size(); i++) {
+        int postsAmount = account.getPosts().size();
+        for (int i = 0; i < limit && isPageAvailable(page, limit , postsAmount); i++) {
             posts.add(account.getPosts().get(i));
         }
-
         ResponsePage response = new ResponsePage(posts, page, limit, account.getPosts().size());
         return ResponseEntity.ok(response);
     }
 
-    private String getEncodedAuthTokenSub(String authorization) {
-        String token = authorization.substring(7);
+    private boolean isPageAvailable(int page, int limit, int totalPosts) {
+        return (page - 1) * limit < totalPosts;
+    }
+
+    private String getEncodedEmail(String rawToken) {
+        String token = rawToken.substring(7);
         AuthToken authToken = new AuthToken(token);
         return JWTManager.readJWT(authToken.getToken());
     }
